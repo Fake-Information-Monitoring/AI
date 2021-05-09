@@ -4,9 +4,10 @@ from sanic import Sanic
 from sanic.response import json as sanicJson
 from sklearn.preprocessing import PolynomialFeatures
 
+from DFA import getFilter
 from config import *
 from loadingData import wash_sentence
-from loadingModel import load
+from loadingModel import load, save
 
 app = Sanic("FakeNews")
 poly = PolynomialFeatures(degree=40)
@@ -60,8 +61,10 @@ async def verifyOtherNews(request):
         return sanicJson({
             "code": 200,
             "success": True,
-            "text": text,
-            "data": data
+            "data": {
+                "text": text,
+                "result": data
+            }
         })
     except Exception as e:
         return sanicJson({
@@ -75,11 +78,11 @@ if __name__ == '__main__':
     rumor_model = load("./models/rum_model.pkl")
     rumor_tfidf = load('./models/rum_tfidf.pkl')
     models = []
-    # for key, value in path_list.items():
-    #     models.append(getFilter(value, key))
-    # for model in models:
-    #     save(model, "./models/"+result_[model.type] + ".pkl")
-    for i in result_.values():
-        model = load("./models/"+i+".pkl")
-        models.append(model)
+    for key, value in path_list.items():
+        models.append(getFilter(value, key))
+    for model in models:
+        save(model, "./models/"+result_[model.type] + ".pkl")
+    # for i in result_.values():
+    #     model = load("./models/" + i + ".pkl")
+    #     models.append(model)
     app.run(host="127.0.0.1", port=4336, debug=True)
