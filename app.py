@@ -52,12 +52,10 @@ async def verifyOtherNews(request):
                 "success": False,
                 "msg": "表单为空！"
             })
-        text = "&".join(jieba.cut(text))
         data = {}
         for model in models:
             text, words = model.filter(text)
             data[result_[model.type]] = words
-        text = text.replace("&", "")
         return sanicJson({
             "code": 200,
             "success": True,
