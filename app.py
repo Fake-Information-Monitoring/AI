@@ -1,13 +1,11 @@
-import jieba
 from numpy.core.multiarray import ndarray
 from sanic import Sanic
 from sanic.response import json as sanicJson
 from sklearn.preprocessing import PolynomialFeatures
 
-from DFA import getFilter
 from config import *
 from loadingData import wash_sentence
-from loadingModel import load, save
+from loadingModel import load
 
 app = Sanic("FakeNews")
 poly = PolynomialFeatures(degree=40)
@@ -21,7 +19,8 @@ async def verifyRumor(request):
             return sanicJson({
                 "code": 401,
                 "success": False,
-                "data": "表单为空！"
+                "data": "表单为空！",
+                "isFake": False
             })
         test = [wash_sentence(text), ]
         test = rumor_tfidf.transform(test)
@@ -32,13 +31,15 @@ async def verifyRumor(request):
         return sanicJson({
             "code": 200,
             "success": True,
-            "data": data
+            "data": data,
+            "isFake": True if (data['谣言'] >= data['非谣言']) else False
         })
     except Exception as e:
         return sanicJson({
             "code": 500,
             "success": False,
-            "data": str(e)
+            "data": str(e),
+            "isFake": False
         })
 
 
@@ -59,6 +60,7 @@ async def verifyOtherNews(request):
         return sanicJson({
             "code": 200,
             "success": True,
+            "isFake": True if len(data.keys()) != 0 else False,
             "data": {
                 "text": text,
                 "result": data
@@ -68,7 +70,8 @@ async def verifyOtherNews(request):
         return sanicJson({
             "code": 500,
             "success": False,
-            "data": str(e)
+            "data": str(e),
+            "isFake":False
         })
 
 
@@ -76,11 +79,11 @@ if __name__ == '__main__':
     rumor_model = load("./models/rum_model.pkl")
     rumor_tfidf = load('./models/rum_tfidf.pkl')
     models = []
-    for key, value in path_list.items():
-        models.append(getFilter(value, key))
-    for model in models:
-        save(model, "./models/"+result_[model.type] + ".pkl")
-    # for i in result_.values():
-    #     model = load("./models/" + i + ".pkl")
-    #     models.append(model)
+    # for key, value in path_list.items():
+    #     models.append(getFilter(value, key))
+    # for model in models:
+    #     save(model, "./models/"+result_[model.type] + ".pkl")
+    for i in result_.values():
+        model = load("./models/" + i + ".pkl")
+        models.append(model)
     app.run(host="127.0.0.1", port=4336, debug=True)
