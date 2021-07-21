@@ -3,9 +3,10 @@ from sanic import Sanic
 from sanic.response import json as sanicJson
 from sklearn.preprocessing import PolynomialFeatures
 
+from DFA import getFilter
 from config import *
 from loadingData import wash_sentence
-from loadingModel import load
+from loadingModel import load, save
 
 app = Sanic("FakeNews")
 poly = PolynomialFeatures(degree=40)
@@ -57,14 +58,17 @@ async def verifyOtherNews(request):
         for model in models:
             text, words = model.filter(text)
             data[result_[model.type]] = words
+        isFake = False
+        for key,value in data.items():
+            if len(value) > 0:
+                isFake = True
+                break
         return sanicJson({
             "code": 200,
             "success": True,
-            "isFake": True if len(data.keys()) != 0 else False,
-            "data": {
-                "text": text,
-                "result": data
-            }
+            "isFake": isFake,
+            "text": text,
+            "data": data
         })
     except Exception as e:
         return sanicJson({
